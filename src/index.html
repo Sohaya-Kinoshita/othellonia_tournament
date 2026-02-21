@@ -69,25 +69,25 @@
 </body>
 
 <script>
-    // ログイン状態をチェック
-    function checkLogin() {
+    // ログイン状態を確認して表示
+    function updateUserInfo() {
         const user = localStorage.getItem('user');
-        if (!user) {
-            window.location.href = './login.html';
-            return;
-        }
-
-        const userData = JSON.parse(user);
         const userInfo = document.getElementById('userInfo');
-        userInfo.innerHTML = `<span style="color: var(--muted);">${userData.id}(${userData.role})</span> | <a href="#" onclick="logout(); return false;">ログアウト</a>`;
+
+        if (user) {
+            const userData = JSON.parse(user);
+            userInfo.innerHTML = `<span style="color: var(--muted);">${userData.id}(${userData.role})</span> | <a href="#" onclick="logout(); return false;">ログアウト</a>`;
+        } else {
+            userInfo.innerHTML = `<a href="./login.html">ログイン</a>`;
+        }
     }
 
     function logout() {
         localStorage.removeItem('user');
-        window.location.href = './login.html';
+        updateUserInfo();
     }
 
-    checkLogin();
+    updateUserInfo();
 </script>
 
 </html>
