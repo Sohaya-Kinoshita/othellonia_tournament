@@ -12,6 +12,7 @@
     <header class="header">
         <div class="header-inner">
             <div class="brand">隊抗戦</div>
+            <div id="lastUpdated" style="color:var(--muted);font-size:0.9em;margin-left:auto;"></div>
             <nav class="nav">
                 <a href="./index.html">トップ</a>
                 <a href="./teams.html">出場チーム</a>
@@ -66,28 +67,29 @@
                 © 2016 DeNA Co.,Ltd.</p>
         </div>
     </footer>
-</body>
 
-<script>
-    // ログイン状態を確認して表示
-    function updateUserInfo() {
-        const user = localStorage.getItem('user');
-        const userInfo = document.getElementById('userInfo');
+    <script src="./lastUpdated.js"></script>
 
-        if (user) {
-            const userData = JSON.parse(user);
-            userInfo.innerHTML = `<span style="color: var(--muted);">${userData.id}(${userData.role})</span> | <a href="#" onclick="logout(); return false;">ログアウト</a>`;
-        } else {
-            userInfo.innerHTML = `<a href="./login.html">ログイン</a>`;
+    <script>
+        // ログイン状態を確認して表示
+        function updateUserInfo() {
+            const user = localStorage.getItem('user');
+            const userInfo = document.getElementById('userInfo');
+
+            if (user) {
+                const userData = JSON.parse(user);
+                userInfo.innerHTML = `<span style="color: var(--muted);">${userData.id}(${userData.role})</span> | <a href="#" onclick="logout(); return false;">ログアウト</a>`;
+            } else {
+                userInfo.innerHTML = `<a href="./login.html">ログイン</a>`;
+            }
         }
-    }
 
-    function logout() {
-        localStorage.removeItem('user');
+        function logout() {
+            localStorage.removeItem('user');
+            updateUserInfo();
+        }
+
         updateUserInfo();
-    }
-
-    updateUserInfo();
-</script>
+    </script>
 
 </html>

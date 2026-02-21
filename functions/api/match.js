@@ -79,6 +79,7 @@ exports.handler = async (event) => {
         }
         data.matches[matchId] = data.matches[matchId] || {};
         data.matches[matchId].winner = winner === null ? null : String(winner);
+        data.lastUpdated = new Date().toISOString();
         writeData(data);
         return {
           statusCode: 200,
