@@ -67,6 +67,26 @@
                 </div>
 
                 <div class="mt-12">
+                    <h3>シンプル勝敗入力（7行）</h3>
+                    <div id="sevenMatchesContainer">
+                        <table id="sevenMatchTable">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>A側</th>
+                                    <th>B側</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                        <div class="mt-8">
+                            <button id="saveAllSeven">一括保存（API）</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-12">
                     <button id="exportBtn">JSONをダウンロード</button>
                     <input type="file" id="importFile" accept="application/json" />
                 </div>
@@ -360,6 +380,72 @@
 
         document.getElementById('exportTeamsBtn').addEventListener('click', exportTeams);
         document.getElementById('importTeamsFile').addEventListener('change', importTeamsFile);
+
+        // --- Seven-match simple winner UI logic ---
+        let sevenState = new Array(7).fill(null);
+
+        async function renderSevenMatches() {
+            const data = await loadInitial();
+            const tbody = document.querySelector('#sevenMatchTable tbody');
+            tbody.innerHTML = '';
+            for (let i = 0; i < 7; i++) {
+                const m = (data && data.matches && data.matches[i]) || { team1: '', team2: '' };
+                const winner = m.winner || null;
+                sevenState[i] = winner;
+                const aDot = winner === 'A' ? '・' : '';
+                const bDot = winner === 'B' ? '・' : '';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${i + 1}</td><td><button data-row="${i}" data-side="A" class="sevenBtn">A${aDot}</button> ${m.team1 || ''}</td><td><button data-row="${i}" data-side="B" class="sevenBtn">B${bDot}</button> ${m.team2 || ''}</td><td><button data-row="${i}" class="saveRowBtn">保存</button></td>`;
+                tbody.appendChild(tr);
+            }
+            document.querySelectorAll('.sevenBtn').forEach(b => b.addEventListener('click', onToggleSeven));
+            document.querySelectorAll('.saveRowBtn').forEach(b => b.addEventListener('click', onSaveRow));
+        }
+
+        function onToggleSeven(e) {
+            const row = Number(e.currentTarget.dataset.row);
+            const side = e.currentTarget.dataset.side;
+            if (sevenState[row] === side) sevenState[row] = null;
+            else sevenState[row] = side;
+            renderSevenMatches();
+        }
+
+        async function onSaveRow(e) {
+            const row = Number(e.currentTarget.dataset.row);
+            await saveWinner(row);
+        }
+
+        async function saveWinner(row) {
+            const pwd = prompt('管理者パスワードを入力してください');
+            if (!pwd) { alert('キャンセルされました'); return; }
+            const body = { action: 'setWinner', matchId: row, winner: sevenState[row], adminPassword: pwd };
+            try {
+                const res = await fetch('./api/match', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                const j = await res.json();
+                if (res.ok && j.success) {
+                    alert('保存しました');
+                    const updated = await (await fetch('./api/match')).json();
+                    if (updated) { saveToLocal(updated); renderList(); renderSevenMatches(); }
+                } else {
+                    alert('保存に失敗しました: ' + (j.message || JSON.stringify(j)));
+                }
+            } catch (err) { alert('エラー: ' + err); }
+        }
+
+        document.getElementById('saveAllSeven').addEventListener('click', async () => {
+            const pwd = prompt('管理者パスワードを入力してください');
+            if (!pwd) return;
+            for (let i = 0; i < 7; i++) {
+                const body = { action: 'setWinner', matchId: i, winner: sevenState[i], adminPassword: pwd };
+                try { await fetch('./api/match', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); } catch (e) { }
+            }
+            const updated = await (await fetch('./api/match')).json();
+            if (updated) { saveToLocal(updated); renderList(); renderSevenMatches(); }
+            alert('一括保存完了');
+        });
+
+        // 初回レンダリング
+        renderSevenMatches();
         // Firestore が有効な場合はチーム表示を Firestore から取得
         if (window.FIREBASE_ENABLED) {
             // 初期表示を待ってからレンダリング
