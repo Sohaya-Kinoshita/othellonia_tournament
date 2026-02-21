@@ -195,3 +195,39 @@ th {
   font-size: 14px;
   color: var(--muted);
 }
+
+/* 9) ログイン画面 */
+.login-card {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--link);
+}
+
+.error-msg {
+  margin-top: 12px;
+  color: #dc2626;
+  font-size: 14px;
+}

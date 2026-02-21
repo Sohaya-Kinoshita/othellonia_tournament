@@ -18,6 +18,7 @@
                 <a href="./schedule.html">対戦日程</a>
                 <a href="./results.html">対戦結果</a>
                 <a href="./deckcheck.html">デッキ判定</a>
+                <span id="userInfo"></span>
             </nav>
         </div>
     </header>
@@ -66,5 +67,27 @@
         </div>
     </footer>
 </body>
+
+<script>
+    // ログイン状態をチェック
+    function checkLogin() {
+        const user = localStorage.getItem('user');
+        if (!user) {
+            window.location.href = './login.html';
+            return;
+        }
+
+        const userData = JSON.parse(user);
+        const userInfo = document.getElementById('userInfo');
+        userInfo.innerHTML = `<span style="color: var(--muted);">${userData.id}(${userData.role})</span> | <a href="#" onclick="logout(); return false;">ログアウト</a>`;
+    }
+
+    function logout() {
+        localStorage.removeItem('user');
+        window.location.href = './login.html';
+    }
+
+    checkLogin();
+</script>
 
 </html>
