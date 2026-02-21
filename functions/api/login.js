@@ -1,23 +1,26 @@
 const users = {
-  "admin": {
-    "password": "admin123",
-    "role": "admin"
+  admin: {
+    password: "admin123",
+    role: "admin",
   },
-  "user1": {
-    "password": "user123",
-    "role": "team_representative"
+  user1: {
+    password: "user123",
+    role: "team_representative",
   },
-  "user2": {
-    "password": "user456",
-    "role": "viewer"
-  }
+  user2: {
+    password: "user456",
+    role: "viewer",
+  },
 };
 
 exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
+  if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-      body: JSON.stringify({ success: false, message: 'メソッドが許可されていません' })
+      body: JSON.stringify({
+        success: false,
+        message: "メソッドが許可されていません",
+      }),
     };
   }
 
@@ -27,7 +30,10 @@ exports.handler = async (event) => {
     if (!userId || !password) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ success: false, message: 'ユーザーIDとパスワードを入力してください' })
+        body: JSON.stringify({
+          success: false,
+          message: "ユーザーIDとパスワードを入力してください",
+        }),
       };
     }
 
@@ -36,7 +42,10 @@ exports.handler = async (event) => {
     if (!user || user.password !== password) {
       return {
         statusCode: 401,
-        body: JSON.stringify({ success: false, message: 'ユーザーIDまたはパスワードが正しくありません' })
+        body: JSON.stringify({
+          success: false,
+          message: "ユーザーIDまたはパスワードが正しくありません",
+        }),
       };
     }
 
@@ -45,13 +54,13 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         success: true,
         role: user.role,
-        message: 'ログインしました'
-      })
+        message: "ログインしました",
+      }),
     };
   } catch (error) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ success: false, message: 'サーバーエラー' })
+      body: JSON.stringify({ success: false, message: "サーバーエラー" }),
     };
   }
 };
