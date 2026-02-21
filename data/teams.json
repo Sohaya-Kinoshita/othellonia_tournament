@@ -14,10 +14,10 @@
       "participants": [
         { "name": "A1", "playerId": "100000000001" },
         { "name": "A2", "playerId": "100000000002" },
-        { "name": "A3", "playerId": "100000000003" }
+        { "name": "A3", "playerId": "100000000003" },
         { "name": "A4", "playerId": "100000000004" },
         { "name": "A5", "playerId": "100000000005" },
-        { "name": "A6", "playerId": "100000000006" }
+        { "name": "A6", "playerId": "100000000006" },
         { "name": "A7", "playerId": "100000000007" },
         { "name": "A8", "playerId": "100000000008" },
         { "name": "A9", "playerId": "100000000009" }
