@@ -11,6 +11,7 @@
 <body>
     <header class="header">
         <div class="header-inner">
+
             <div class="brand">隊抗戦</div>
             <nav class="nav">
                 <a href="./index.html">トップ</a>
@@ -26,7 +27,39 @@
     <main class="container">
         <div class="card">
             <h1>出場チーム</h1>
-            <p>大会に出場するチーム一覧です。</p>
+            <p>大会に出場するチーム一覧と新規申請フォームです。チーム名と参加者氏名は公開されます。プレイヤーIDは管理者のみ閲覧できます。</p>
+        </div>
+
+        <div class="card">
+            <h2>新規参加申請</h2>
+            <form id="regForm">
+                <div class="form-group">
+                    <label>チーム名</label>
+                    <input id="teamName" type="text" required />
+                </div>
+
+                <div id="participants">
+                    <h3>参加者</h3>
+                    <div class="participant row">
+                        <input class="p_name" type="text" placeholder="氏名" required />
+                        <input class="p_id" type="text" placeholder="プレイヤーID（管理者のみ表示）" />
+                        <button class="removeBtn" type="button" style="display:none;">削除</button>
+                    </div>
+                </div>
+
+                <div class="mt-8">
+                    <button id="addParticipant" type="button">参加者を追加</button>
+                </div>
+
+                <div class="mt-12">
+                    <button id="submitReg">申請を送信</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>登録済みチーム（公開）</h2>
+            <div id="teamsListPublic"></div>
         </div>
     </main>
 
@@ -39,6 +72,7 @@
 </body>
 
 <script>
+    // ユーザー情報表示
     function updateUserInfo() {
         const user = localStorage.getItem('user');
         const userInfo = document.getElementById('userInfo');
@@ -57,6 +91,94 @@
     }
 
     updateUserInfo();
+
+    // -- 参加申請ロジック --
+    function createParticipantRow(name = '', id = '') {
+        const div = document.createElement('div');
+        div.className = 'participant row';
+        div.innerHTML = `
+            <input class="p_name" type="text" placeholder="氏名" required value="${name}" />
+            <input class="p_id" type="text" placeholder="プレイヤーID（管理者のみ表示）" value="${id}" />
+            <button class="removeBtn" type="button">削除</button>
+        `;
+        const btn = div.querySelector('.removeBtn');
+        btn.addEventListener('click', () => div.remove());
+        return div;
+    }
+
+    document.getElementById('addParticipant').addEventListener('click', (e) => {
+        e.preventDefault();
+        const participants = document.getElementById('participants');
+        participants.appendChild(createParticipantRow());
+    });
+
+    function loadTeamsData() {
+        const raw = localStorage.getItem('teams');
+        if (raw) {
+            try { return JSON.parse(raw); } catch (e) { return { teams: [] }; }
+        }
+        // fallback to data/teams.json
+        return null;
+    }
+
+    async function loadTeamsFallback() {
+        try {
+            const res = await fetch('./data/teams.json');
+            return await res.json();
+        } catch (e) { return { teams: [] }; }
+    }
+
+    async function renderPublicList() {
+        let data = loadTeamsData();
+        if (!data) data = await loadTeamsFallback();
+        const el = document.getElementById('teamsListPublic');
+        if (!data || !data.teams || data.teams.length === 0) {
+            el.innerHTML = '<p>まだ登録がありません。</p>';
+            return;
+        }
+        let html = '';
+        data.teams.forEach(t => {
+            html += `<div class="card mt-8"><h3>${t.teamName}</h3><ul>`;
+            (t.participants || []).forEach(p => {
+                html += `<li>${p.name}</li>`; // playerId は表示しない（公開ページ）
+            });
+            html += `</ul></div>`;
+        });
+        el.innerHTML = html;
+    }
+
+    document.getElementById('submitReg').addEventListener('click', async (e) => {
+        e.preventDefault();
+        const teamName = document.getElementById('teamName').value.trim();
+        if (!teamName) { alert('チーム名を入力してください'); return; }
+        const participantsNodes = Array.from(document.querySelectorAll('.participant'));
+        const participants = participantsNodes.map(n => ({
+            name: n.querySelector('.p_name').value.trim(),
+            playerId: n.querySelector('.p_id').value.trim()
+        })).filter(p => p.name);
+        if (participants.length === 0) { alert('参加者を1名以上入力してください'); return; }
+
+        let data = loadTeamsData();
+        if (!data) data = await loadTeamsFallback();
+        data.teams = data.teams || [];
+        data.teams.push({ teamName, participants, note: '' });
+        localStorage.setItem('teams', JSON.stringify(data));
+        alert('申請を受け付けました（保存されました）');
+        document.getElementById('regForm').reset();
+        // reset participants area
+        const participantsEl = document.getElementById('participants');
+        participantsEl.innerHTML = '';
+        participantsEl.appendChild(createParticipantRow());
+        renderPublicList();
+    });
+
+    // 初期レンダリング
+    (async () => {
+        // ensure one participant row exists
+        const participantsEl = document.getElementById('participants');
+        if (!participantsEl.querySelector('.participant')) participantsEl.appendChild(createParticipantRow());
+        await renderPublicList();
+    })();
 </script>
 
 </html>

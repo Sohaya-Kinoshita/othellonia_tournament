@@ -1,0 +1,12 @@
+{
+  "teams": [
+    {
+      "teamName": "サンプルチーム1",
+      "participants": [
+        { "name": "田中太郎", "playerId": "123456789012" },
+        { "name": "山田花子", "playerId": "123456789013" }
+      ],
+      "note": "サンプル"
+    }
+  ]
+}

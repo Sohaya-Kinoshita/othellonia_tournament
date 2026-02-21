@@ -70,6 +70,15 @@
                     <button id="exportBtn">JSONをダウンロード</button>
                     <input type="file" id="importFile" accept="application/json" />
                 </div>
+
+                <div class="mt-12">
+                    <h3>チーム管理（管理者のみ）</h3>
+                    <div id="teamsAdminList"></div>
+                    <div class="mt-8">
+                        <button id="exportTeamsBtn">チームJSONをダウンロード</button>
+                        <input type="file" id="importTeamsFile" accept="application/json" />
+                    </div>
+                </div>
             </div>
         </div>
     </main>
@@ -216,6 +225,68 @@
             };
             reader.readAsText(f, 'utf-8');
         }
+
+        // ---- Teams management (admin only) ----
+        async function loadTeams() {
+            let data = null;
+            const raw = localStorage.getItem('teams');
+            if (raw) {
+                try { data = JSON.parse(raw); } catch (e) { data = null; }
+            }
+            if (!data) {
+                try {
+                    const res = await fetch('./data/teams.json');
+                    data = await res.json();
+                } catch (e) { data = { teams: [] }; }
+            }
+            return data;
+        }
+
+        async function renderTeamsAdmin() {
+            const data = await loadTeams();
+            const el = document.getElementById('teamsAdminList');
+            if (!data || !data.teams || data.teams.length === 0) {
+                el.innerHTML = '<p>登録チームはありません</p>';
+                return;
+            }
+            let html = '<table><thead><tr><th>チーム名</th><th>参加者</th><th>プレイヤーID (管理者のみ)</th></tr></thead><tbody>';
+            data.teams.forEach((t, idx) => {
+                const names = (t.participants || []).map(p => p.name).join('<br>');
+                const ids = (t.participants || []).map(p => p.playerId || '').join('<br>');
+                html += `<tr><td>${t.teamName}</td><td>${names}</td><td>${ids}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            el.innerHTML = html;
+        }
+
+        function exportTeams() {
+            const raw = localStorage.getItem('teams') || JSON.stringify({ teams: [] });
+            const blob = new Blob([raw], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'teams.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importTeamsFile(e) {
+            const f = e.target.files[0];
+            if (!f) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const json = JSON.parse(reader.result);
+                    localStorage.setItem('teams', JSON.stringify(json));
+                    renderTeamsAdmin();
+                    alert('チームデータをインポートしました');
+                } catch (err) { alert('JSON読み込みに失敗しました'); }
+            };
+            reader.readAsText(f, 'utf-8');
+        }
+
+        document.getElementById('exportTeamsBtn').addEventListener('click', exportTeams);
+        document.getElementById('importTeamsFile').addEventListener('change', importTeamsFile);
 
         async function checkAccess() {
             const msg = document.getElementById('accessMsg');
