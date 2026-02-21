@@ -41,34 +41,31 @@
     </footer>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        // ユーザーデータ（簡易版）
+        const users = {
+            admin: { password: "admin123", role: "admin" },
+            user1: { password: "user123", role: "team_representative" },
+            user2: { password: "user456", role: "viewer" }
+        };
+
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const userId = document.getElementById('userId').value;
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('errorMsg');
 
-            try {
-                const response = await fetch('/.netlify/functions/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId, password })
-                });
+            const user = users[userId];
 
-                const data = await response.json();
-
-                if (data.success) {
-                    localStorage.setItem('user', JSON.stringify({
-                        id: userId,
-                        role: data.role
-                    }));
-                    window.location.href = './index.html';
-                } else {
-                    errorMsg.textContent = data.message || 'ログインに失敗しました';
-                }
-            } catch (err) {
-                errorMsg.textContent = 'エラーが発生しました';
-                console.error(err);
+            if (!user || user.password !== password) {
+                errorMsg.textContent = 'ユーザーIDまたはパスワードが正しくありません';
+                return;
             }
+
+            localStorage.setItem('user', JSON.stringify({
+                id: userId,
+                role: user.role
+            }));
+            window.location.href = './index.html';
         });
     </script>
 </body>
