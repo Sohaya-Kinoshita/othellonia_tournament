@@ -59,6 +59,10 @@
 
         <div class="card">
             <h2>登録済みチーム（公開）</h2>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+                <button id="syncPublicData">公開データを反映</button>
+                <span style="color:var(--muted);">（`data/teams.json` の内容を公開データとして反映します）</span>
+            </div>
             <div id="teamsListPublic"></div>
         </div>
     </main>
@@ -170,6 +174,19 @@
         participantsEl.innerHTML = '';
         participantsEl.appendChild(createParticipantRow());
         renderPublicList();
+    });
+
+    // 公開データを data/teams.json から取得して localStorage に反映する（管理者向けの簡易同期）
+    document.getElementById('syncPublicData').addEventListener('click', async (e) => {
+        e.preventDefault();
+        try {
+            const res = await fetch('./data/teams.json');
+            const json = await res.json();
+            if (!json || !json.teams) { alert('公開データが見つかりません'); return; }
+            localStorage.setItem('teams', JSON.stringify(json));
+            await renderPublicList();
+            alert('公開データを反映しました');
+        } catch (err) { alert('同期に失敗しました: ' + err); }
     });
 
     // 初期レンダリング
