@@ -2,47 +2,43 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
+  <link rel="stylesheet" href="./style.css" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>デッキ判定</title>
 </head>
 <body>
-  <h1>デッキ判定</h1>
+  <header class="header">
+    <div class="header-inner">
+      <div class="brand">大会サイト</div>
+      <nav class="nav">
+        <a href="./index.html">トップ</a>
+        <a href="./deckcheck.html">デッキ判定</a>
+      </nav>
+    </div>
+  </header>
 
-  <label>
-    デッキID
-    <input id="deckId" type="text" placeholder="例：ABC12345" />
-  </label>
+  <main class="container">
+    <div class="card">
+      <h1>デッキ判定</h1>
+
+      <label>
+        デッキID
+        <input id="deckId" type="text" placeholder="例：50文字のデッキID" />
+      </label>
+
+<div class="stack">
   <button id="checkBtn">判定</button>
+</div>
 
-  <pre id="result"></pre>
+<div class="stack">
+  <pre id="result" class="pre"></pre>
+</div>
+    </div>
 
-  <script>
-    const deckIdInput = document.getElementById("deckId");
-    const checkBtn = document.getElementById("checkBtn");
-    const result = document.getElementById("result");
-
-    checkBtn.addEventListener("click", async () => {
-      result.textContent = "判定中...";
-
-      const deckId = deckIdInput.value.trim();
-      try {
-        const response = await fetch("/api/validateDeck", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ deckId })
-        });
-
-        const data = await response.json();
-
-        if (data.ok) {
-          result.textContent = "OK：ルール適合";
-        } else {
-          result.textContent = "NG：\n- " + (data.reasons || []).join("\n- ");
-        }
-      } catch (e) {
-        result.textContent = "通信エラー： " + e;
-      }
-    });
-  </script>
+    <!-- 既存のscriptはこの下にそのまま置いてOK -->
+    <script>
+      /* ここに今のJS（fetchして結果表示するやつ） */
+    </script>
+  </main>
 </body>
 </html>
