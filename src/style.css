@@ -13,11 +13,17 @@
   --link: #2563eb;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
   color: var(--text);
   background: var(--bg);
   line-height: 1.6;
@@ -64,7 +70,9 @@ body {
   font-weight: 600;
 }
 
-.nav a:hover { text-decoration: underline; }
+.nav a:hover {
+  text-decoration: underline;
+}
 
 /* 4) カード */
 .card {
@@ -94,7 +102,9 @@ button {
   cursor: pointer;
 }
 
-button:hover { opacity: 0.9; }
+button:hover {
+  opacity: 0.9;
+}
 
 .pre {
   background: #0b1020;
@@ -115,13 +125,17 @@ table {
   min-width: 640px; /* スマホでは横スクロールに回す */
 }
 
-th, td {
+th,
+td {
   border-bottom: 1px solid var(--border);
   padding: 10px 8px;
   text-align: left;
 }
 
-th { color: var(--muted); font-weight: 700; }
+th {
+  color: var(--muted);
+  font-weight: 700;
+}
 
 /* 7) ここからレスポンシブ（スマホ最適化） */
 @media (max-width: 600px) {
@@ -130,17 +144,50 @@ th { color: var(--muted); font-weight: 700; }
     align-items: flex-start;
   }
 
-  .brand { font-size: 16px; }
+  .brand {
+    font-size: 16px;
+  }
 
-  button { width: 100%; }
+  button {
+    width: 100%;
+  }
 
-  table { min-width: 520px; } /* 画面が小さい時は横スクロールに逃がす */
+  table {
+    min-width: 520px;
+  } /* 画面が小さい時は横スクロールに逃がす */
 }
 
 .stack {
   margin-top: 12px;
 }
 
-.mt-8 { margin-top: 8px; }
-.mt-12 { margin-top: 12px; }
-.mt-16 { margin-top: 16px; }
+.mt-8 {
+  margin-top: 8px;
+}
+.mt-12 {
+  margin-top: 12px;
+}
+.mt-16 {
+  margin-top: 16px;
+}
+
+/* 8) フッター */
+.footer {
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  margin-top: 32px;
+}
+
+.footer-inner {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 16px;
+  text-align: center;
+}
+
+.footer p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
