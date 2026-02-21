@@ -45,6 +45,24 @@
             </div>
 
             <div class="mt-12">
+                <h3>チーム集計（勝-敗-分）</h3>
+                <div class="table-wrap">
+                    <table id="standingsTable">
+                        <thead>
+                            <tr>
+                                <th>チーム</th>
+                                <th>勝</th>
+                                <th>敗</th>
+                                <th>分</th>
+                                <th>試合数</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="mt-12">
                 <a href="./admin.html">管理画面（結果入力）</a>
             </div>
         </div>
@@ -104,7 +122,51 @@
         }
         data.matches.forEach(m => {
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${m.time}</td><td>${m.team1}</td><td>${m.team2}</td><td>${m.score1} - ${m.score2}</td><td>${m.note || ''}</td>`;
+            const resultText = m.winner ? (m.winner === 'A' ? (m.team1 + ' 勝') : (m.team2 + ' 勝')) : `${m.score1} - ${m.score2}`;
+            tr.innerHTML = `<td>${m.time}</td><td>${m.team1}</td><td>${m.team2}</td><td>${resultText}</td><td>${m.note || ''}</td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function computeStandings(data) {
+        const stats = {}; // team -> {win,lose,draw,played}
+        (data.matches || []).forEach(m => {
+            const t1 = m.team1 || '';
+            const t2 = m.team2 || '';
+            if (!t1 || !t2) return;
+            if (!stats[t1]) stats[t1] = { win: 0, lose: 0, draw: 0, played: 0 };
+            if (!stats[t2]) stats[t2] = { win: 0, lose: 0, draw: 0, played: 0 };
+
+            let winner = null;
+            if (m.winner === 'A' || m.winner === 'B') winner = m.winner;
+            else if (typeof m.score1 === 'number' && typeof m.score2 === 'number') {
+                if (m.score1 > m.score2) winner = 'A';
+                else if (m.score2 > m.score1) winner = 'B';
+                else winner = null;
+            }
+
+            stats[t1].played += 1;
+            stats[t2].played += 1;
+            if (winner === 'A') { stats[t1].win += 1; stats[t2].lose += 1; }
+            else if (winner === 'B') { stats[t2].win += 1; stats[t1].lose += 1; }
+            else { stats[t1].draw += 1; stats[t2].draw += 1; }
+        });
+        const rows = Object.keys(stats).map(team => ({ team, ...stats[team] }));
+        rows.sort((a, b) => b.win - a.win || a.lose - b.lose || b.played - a.played);
+        return rows;
+    }
+
+    function renderStandings(data) {
+        const tbody = document.querySelector('#standingsTable tbody');
+        tbody.innerHTML = '';
+        const rows = computeStandings(data);
+        if (rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5">集計できるデータがありません</td></tr>';
+            return;
+        }
+        rows.forEach(r => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${r.team}</td><td>${r.win}</td><td>${r.lose}</td><td>${r.draw}</td><td>${r.played}</td>`;
             tbody.appendChild(tr);
         });
     }
@@ -112,6 +174,7 @@
     (async () => {
         const data = await loadResults();
         renderResults(data);
+        renderStandings(data);
     })();
 </script>
 
