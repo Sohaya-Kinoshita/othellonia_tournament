@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="./style.css" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>管理 - 対戦結果入力</title>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-inner">
+            <div class="brand">隊抗戦</div>
+            <nav class="nav">
+                <a href="./index.html">トップ</a>
+                <a href="./results.html">対戦結果</a>
+                <span id="userInfo"></span>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="card">
+            <h1>対戦結果の入力・管理</h1>
+            <p>※ この画面は簡易管理画面です。権限管理はクライアント側のチェックのため、本番運用ではサーバー側での認証を推奨します。</p>
+
+            <div id="accessMsg" class="mt-12"></div>
+
+            <div class="mt-8">
+                <button id="quickAdmin" type="button">テストログイン（管理者）</button>
+                <span style="margin-left:8px;color:var(--muted);">初心者向け：押すと一時的に管理者として操作できます（本番では使わないでください）</span>
+            </div>
+
+            <div id="adminArea" style="display:none;">
+                <form id="matchForm">
+                    <div class="form-group">
+                        <label>時間</label>
+                        <input id="m_time" type="text" placeholder="例: 10:00" required />
+                    </div>
+                    <div class="form-group">
+                        <label>対戦1</label>
+                        <input id="m_team1" type="text" placeholder="チーム名" required />
+                    </div>
+                    <div class="form-group">
+                        <label>対戦2</label>
+                        <input id="m_team2" type="text" placeholder="チーム名" required />
+                    </div>
+                    <div class="form-group">
+                        <label>得点（対戦1）</label>
+                        <input id="m_score1" type="number" value="0" />
+                    </div>
+                    <div class="form-group">
+                        <label>得点（対戦2）</label>
+                        <input id="m_score2" type="number" value="0" />
+                    </div>
+                    <div class="form-group">
+                        <label>メモ</label>
+                        <input id="m_note" type="text" />
+                    </div>
+                    <button id="addMatch">追加 / 保存</button>
+                </form>
+
+                <div class="mt-12">
+                    <h3>現在の対戦一覧</h3>
+                    <div id="matchList"></div>
+                </div>
+
+                <div class="mt-12">
+                    <button id="exportBtn">JSONをダウンロード</button>
+                    <input type="file" id="importFile" accept="application/json" />
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <p>オセロ・Othelloは登録商標です。TM&© Othello,Co. and MegaHouse<br>
+                © 2016 DeNA Co.,Ltd.</p>
+        </div>
+    </footer>
+
+    <script>
+        // 表示するユーザー情報（ログインリンクの表示）
+        function updateUserInfo() {
+            const user = localStorage.getItem('user');
+            const userInfo = document.getElementById('userInfo');
+            if (user) {
+                const userData = JSON.parse(user);
+                userInfo.innerHTML = `<span style="color: var(--muted);">${userData.id}(${userData.role})</span> | <a href="#" onclick="logout(); return false;">ログアウト</a>`;
+            } else {
+                userInfo.innerHTML = `<a href="./login.html">ログイン</a>`;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('user');
+            updateUserInfo();
+            checkAccess();
+        }
+
+        updateUserInfo();
+
+        // 管理権限チェック（adminまたはteam_representative を許可）
+        function hasAdminAccess() {
+            const user = localStorage.getItem('user');
+            if (!user) return false;
+            const r = JSON.parse(user).role;
+            return r === 'admin' || r === 'team_representative';
+        }
+
+        async function loadInitial() {
+            // まず localStorage の results を読み、なければ data/results.json を読み込む
+            let data = null;
+            const raw = localStorage.getItem('results');
+            if (raw) {
+                try { data = JSON.parse(raw); } catch (e) { data = null; }
+            }
+            if (!data) {
+                try {
+                    const res = await fetch('./data/results.json');
+                    data = await res.json();
+                } catch (e) { data = { matches: [] }; }
+            }
+            return data;
+        }
+
+        async function renderList() {
+            const data = await loadInitial();
+            const container = document.getElementById('matchList');
+            if (!data || !data.matches || data.matches.length === 0) {
+                container.innerHTML = '<p>データがありません</p>';
+                return;
+            }
+            let html = '<table><thead><tr><th>時間</th><th>対戦1</th><th>対戦2</th><th>得点</th><th>メモ</th><th>操作</th></tr></thead><tbody>';
+            data.matches.forEach((m, idx) => {
+                html += `<tr><td>${m.time}</td><td>${m.team1}</td><td>${m.team2}</td><td>${m.score1} - ${m.score2}</td><td>${m.note || ''}</td><td><button data-idx="${idx}" class="editBtn">編集</button> <button data-idx="${idx}" class="delBtn">削除</button></td></tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+            document.querySelectorAll('.editBtn').forEach(b => b.addEventListener('click', onEdit));
+            document.querySelectorAll('.delBtn').forEach(b => b.addEventListener('click', onDelete));
+        }
+
+        function saveToLocal(data) {
+            localStorage.setItem('results', JSON.stringify(data));
+        }
+
+        async function onAdd(e) {
+            e.preventDefault();
+            if (!hasAdminAccess()) { alert('編集権限が必要です'); return; }
+            const m = {
+                time: document.getElementById('m_time').value,
+                team1: document.getElementById('m_team1').value,
+                team2: document.getElementById('m_team2').value,
+                score1: Number(document.getElementById('m_score1').value) || 0,
+                score2: Number(document.getElementById('m_score2').value) || 0,
+                note: document.getElementById('m_note').value
+            };
+            const data = await loadInitial();
+            data.matches = data.matches || [];
+            data.matches.push(m);
+            saveToLocal(data);
+            renderList();
+            document.getElementById('matchForm').reset();
+        }
+
+        async function onEdit(e) {
+            const idx = Number(e.currentTarget.dataset.idx);
+            const data = await loadInitial();
+            const m = data.matches[idx];
+            document.getElementById('m_time').value = m.time;
+            document.getElementById('m_team1').value = m.team1;
+            document.getElementById('m_team2').value = m.team2;
+            document.getElementById('m_score1').value = m.score1;
+            document.getElementById('m_score2').value = m.score2;
+            document.getElementById('m_note').value = m.note;
+            // 削除して再追加する方式
+            data.matches.splice(idx, 1);
+            saveToLocal(data);
+            renderList();
+        }
+
+        async function onDelete(e) {
+            if (!confirm('削除してよいですか？')) return;
+            const idx = Number(e.currentTarget.dataset.idx);
+            const data = await loadInitial();
+            data.matches.splice(idx, 1);
+            saveToLocal(data);
+            renderList();
+        }
+
+        function onExport() {
+            const raw = localStorage.getItem('results') || JSON.stringify({ matches: [] });
+            const blob = new Blob([raw], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'results.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function onImportFile(e) {
+            const f = e.target.files[0];
+            if (!f) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const json = JSON.parse(reader.result);
+                    saveToLocal(json);
+                    renderList();
+                    alert('インポート完了');
+                } catch (err) { alert('JSON読み込みに失敗しました'); }
+            };
+            reader.readAsText(f, 'utf-8');
+        }
+
+        async function checkAccess() {
+            const msg = document.getElementById('accessMsg');
+            const adminArea = document.getElementById('adminArea');
+            if (hasAdminAccess()) {
+                msg.innerHTML = '<p>編集可能です（ロールあり）。</p>';
+                adminArea.style.display = 'block';
+            } else {
+                msg.innerHTML = '<p>編集するにはログインしてください（admin または team_representative）。</p>';
+                adminArea.style.display = 'none';
+            }
+            renderList();
+        }
+
+        document.getElementById('addMatch').addEventListener('click', onAdd);
+        document.getElementById('exportBtn').addEventListener('click', onExport);
+        document.getElementById('importFile').addEventListener('change', onImportFile);
+        document.getElementById('quickAdmin').addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.setItem('user', JSON.stringify({ id: 'admin', role: 'admin' }));
+            updateUserInfo();
+            checkAccess();
+            alert('テスト用に管理者としてログインしました');
+        });
+
+        // 初期化
+        checkAccess();
+    </script>
+</body>
+
+</html>

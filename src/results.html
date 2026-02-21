@@ -26,7 +26,27 @@
     <main class="container">
         <div class="card">
             <h1>対戦結果</h1>
-            <p>対戦結果です。</p>
+            <p>最新の対戦結果を表示します。</p>
+
+            <div class="table-wrap mt-12">
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>時間</th>
+                            <th>対戦1</th>
+                            <th>対戦2</th>
+                            <th>結果</th>
+                            <th>メモ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-12">
+                <a href="./admin.html">管理画面（結果入力）</a>
+            </div>
         </div>
     </main>
 
@@ -57,6 +77,42 @@
     }
 
     updateUserInfo();
+</script>
+
+<script>
+    async function loadResults() {
+        let data = null;
+        const raw = localStorage.getItem('results');
+        if (raw) {
+            try { data = JSON.parse(raw); } catch (e) { data = null; }
+        }
+        if (!data) {
+            try {
+                const res = await fetch('./data/results.json');
+                data = await res.json();
+            } catch (e) { data = { matches: [] }; }
+        }
+        return data;
+    }
+
+    function renderResults(data) {
+        const tbody = document.querySelector('#resultsTable tbody');
+        tbody.innerHTML = '';
+        if (!data || !data.matches || data.matches.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5">対戦結果が登録されていません</td></tr>';
+            return;
+        }
+        data.matches.forEach(m => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${m.time}</td><td>${m.team1}</td><td>${m.team2}</td><td>${m.score1} - ${m.score2}</td><td>${m.note || ''}</td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    (async () => {
+        const data = await loadResults();
+        renderResults(data);
+    })();
 </script>
 
 </html>
